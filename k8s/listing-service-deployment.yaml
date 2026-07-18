@@ -34,13 +34,13 @@ spec:
             - name: AWS_REGION
               value: "us-east-1"
             - name: AWS_ACCESS_KEY_ID
-              value: "your-access-key-id"
+              value: "AKIAVKVCS23SJWMIVTDS"
             - name: AWS_SECRET_ACCESS_KEY
-              value: "your-secret-access-key"
+              value: "AKIAVKVCS23SJWMIVTDS"
             - name: S3_BUCKET_NAME
-              value: "your-bucket-name"
+              value: "bucket-olxmeproject"
             - name: STRIPE_SECRET_KEY
-              value: "sk_test_your-test-secret-key"
+              value: "sk_test_51TtMELF3ApBzUsgpq1VUInKXy1rNwdpzmnSeor48bZPy8Gi3RDJ3UswcxnxlLSCJs7yabJM6f14H0HdIQrvBy84B00rQ6dyE1L"
             - name: FRONTEND_URL
               value: "http://localhost:8080"
           readinessProbe:

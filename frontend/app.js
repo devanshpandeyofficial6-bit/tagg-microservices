@@ -1,8 +1,3 @@
-// ============================================================
-// TAGG — frontend logic (vanilla JS, no build step)
-// Talks to user-service, listing-service, chat-service directly.
-// API base URLs come from config.js
-// ============================================================
 
 const appEl = document.getElementById('app');
 const topbarAuthEl = document.getElementById('topbarAuth');
@@ -10,7 +5,7 @@ const toastEl = document.getElementById('toast');
 
 let chatPollTimer = null;
 
-// ---------- theme (light / dark) ----------
+
 
 function getThemePref() {
   return localStorage.getItem('tagg_theme') || 'system';
@@ -29,14 +24,14 @@ function setThemePref(pref) {
   localStorage.setItem('tagg_theme', pref);
   applyTheme();
 }
-applyTheme(); // run immediately so there's no flash of the wrong theme
+applyTheme(); 
 if (window.matchMedia) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (getThemePref() === 'system') applyTheme();
   });
 }
 
-// ---------- auth state ----------
+
 
 function getAuth() {
   try {
@@ -76,9 +71,6 @@ function applyModeTheme() {
   document.body.classList.toggle('mode-seller', mode === 'seller');
 }
 
-// ---------- cart + wishlist state ----------
-// Stored client-side (per logged-in user), as arrays of listing ids.
-// "Cart" = ready to buy now. "Wishlist" = save for later, doesn't affect checkout.
 
 function cartKey() {
   const auth = getAuth();
@@ -110,7 +102,7 @@ function addToCart(id) {
   if (ids.includes(String(id))) return false;
   ids.push(String(id));
   writeIdList(cartKey(), ids);
-  // adding to cart implies "not saving for later" anymore
+ 
   removeFromWishlist(id, { silent: true });
   return true;
 }
@@ -138,7 +130,7 @@ function updateCartBadge() {
   badge.classList.toggle('hidden', count === 0);
 }
 
-// ---------- toast ----------
+
 
 let toastTimer = null;
 function showToast(message, isError = false) {
@@ -149,7 +141,7 @@ function showToast(message, isError = false) {
   toastTimer = setTimeout(() => toastEl.classList.remove('show'), 3200);
 }
 
-// ---------- fetch helpers ----------
+
 
 async function apiFetch(url, options = {}) {
   let res;
@@ -168,7 +160,7 @@ async function apiFetch(url, options = {}) {
   return data;
 }
 
-// ---------- topbar + nav ----------
+
 
 const mainNavEl = document.getElementById('mainNav');
 
@@ -227,7 +219,7 @@ function highlightNav(name) {
   });
 }
 
-// ---------- utils ----------
+
 
 function escapeHtml(str) {
   const div = document.createElement('div');
@@ -245,7 +237,7 @@ function stopChatPolling() {
   if (chatPollTimer) { clearInterval(chatPollTimer); chatPollTimer = null; }
 }
 
-// ---------- router ----------
+
 
 function parseHash() {
   let hash = location.hash || '#/browse';
@@ -278,8 +270,7 @@ function render() {
   const { segments, query } = parseHash();
   const [root, id, extra] = segments;
 
-  // if logged in but hasn't picked a role yet, force the picker first
-  // (except for the picker route itself and standalone views like auth/checkout-success)
+
   const exemptRoutes = ['choose-role', 'auth', 'checkout-success'];
   if (isLoggedIn() && !getMode() && !exemptRoutes.includes(root)) {
     return navigate('#/choose-role');
@@ -301,9 +292,6 @@ function render() {
   navigate('#/browse');
 }
 
-// ============================================================
-// AUTH VIEW
-// ============================================================
 
 function renderAuth() {
   appEl.innerHTML = '';
@@ -361,7 +349,7 @@ function renderAuth() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
-      // auto login right after registering
+    
       const { token } = await apiFetch(`${API.users}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -379,10 +367,6 @@ function renderAuth() {
   });
 }
 
-// ============================================================
-// CHOOSE ROLE VIEW
-// ============================================================
-
 function renderChooseRole() {
   appEl.innerHTML = '';
   appEl.appendChild(clone('tpl-choose-role'));
@@ -397,9 +381,6 @@ function renderChooseRole() {
   });
 }
 
-// ============================================================
-// BROWSE VIEW
-// ============================================================
 
 async function renderBrowse() {
   appEl.innerHTML = '';
@@ -429,9 +410,7 @@ async function renderBrowse() {
         return;
       }
 
-      // Newest-first is already how the API sorts these, so a quick way to
-      // surface freshly uploaded products is a strip of whatever's newest —
-      // only on the default, unfiltered view so it doesn't fight a search.
+    
       if (isUnfiltered) {
         const fresh = listings.filter(isNewListing).slice(0, 8);
         if (fresh.length > 0) {
@@ -539,9 +518,6 @@ function buildListingCard(listing) {
   return node;
 }
 
-// ============================================================
-// SELL VIEW
-// ============================================================
 
 function renderSell() {
   if (!isLoggedIn()) {
@@ -598,9 +574,7 @@ function renderSell() {
   });
 }
 
-// ============================================================
-// MY LISTINGS VIEW (seller's own listings + total earnings)
-// ============================================================
+
 
 async function renderMyListings() {
   if (!isLoggedIn()) {
@@ -628,7 +602,7 @@ async function renderMyListings() {
   const grid = appEl.querySelector('#myListingsGrid');
   const emptyEl = appEl.querySelector('#myListingsEmpty');
 
-  // Total earnings, active count, sold count — all in one glance
+
   try {
     const earnings = await apiFetch(`${API.listings}/orders/earnings/${auth.id}`);
     earningsStrip.innerHTML = `
@@ -657,9 +631,7 @@ async function renderMyListings() {
   }
 }
 
-// ============================================================
-// CART + WISHLIST VIEW
-// ============================================================
+
 
 async function renderCart() {
   if (!isLoggedIn()) {
@@ -694,10 +666,7 @@ async function renderCart() {
 
   const auth = getAuth();
 
-  // Fetch full listing details for whatever ids are stored client-side,
-  // and quietly drop any that no longer exist or got sold in the meantime.
-  // Also resolves each item's effective price — the seller-accepted
-  // negotiated price for this buyer, if one exists, otherwise the listing price.
+ 
   async function loadListings(ids) {
     const results = await Promise.all(ids.map(async id => {
       let listing;
@@ -713,7 +682,7 @@ async function renderCart() {
         const negotiated = await apiFetch(`${API.listings}/${id}/negotiated-price/${auth.id}`);
         effectivePrice = Number(negotiated.price);
       } catch {
-        // no negotiated price for this buyer — normal listing price stands
+     
       }
 
       return { ...listing, effectivePrice };
@@ -784,7 +753,7 @@ async function renderCart() {
     loadListings(getWishlistIds()),
   ]);
 
-  // Drop stale ids (deleted/sold since they were added) from local storage
+  
   writeIdList(cartKey(), cartListings.map(l => l.id));
   writeIdList(wishlistKey(), wishlistListings.map(l => l.id));
 
@@ -808,9 +777,6 @@ async function renderCart() {
   }
 }
 
-// ============================================================
-// LISTING DETAIL + CHAT
-// ============================================================
 
 async function renderListingDetail(id, query) {
   appEl.innerHTML = '';
@@ -886,7 +852,7 @@ async function renderListingDetail(id, query) {
           ${formatPrice(negotiated.price)} <span style="font-size:0.55em; color:var(--ink-soft); font-weight:400;">(your negotiated price)</span>
         `;
       } catch (err) {
-        // no negotiated price for this buyer — normal listing price stands, nothing to do
+       
       }
 
       buyBtn.addEventListener('click', () => {
@@ -951,7 +917,7 @@ function setupChat(listing, query, isOwner) {
     return;
   }
   if (isOwner && !query.get('partner')) {
-    // seller viewing their own listing with no specific buyer selected
+   
     chatForm.classList.add('hidden');
     ownPrompt.classList.remove('hidden');
     ownPrompt.textContent = 'Reply to buyers from your Messages tab.';
@@ -961,7 +927,7 @@ function setupChat(listing, query, isOwner) {
   const partnerId = isOwner ? query.get('partner') : listing.user_id;
   const myId = String(auth.id);
 
-  // Only the buyer side of the conversation can propose a bargain
+
   if (!isOwner) {
     offerToggleBtn.classList.remove('hidden');
     offerToggleBtn.addEventListener('click', () => {
@@ -1071,7 +1037,7 @@ function setupChat(listing, query, isOwner) {
       });
       chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
     } catch (err) {
-      // stay quiet on poll errors, only surface on first load
+      
     }
   }
 
@@ -1101,9 +1067,7 @@ function setupChat(listing, query, isOwner) {
   chatPollTimer = setInterval(loadMessages, 4000);
 }
 
-// ============================================================
-// MESSAGES VIEW
-// ============================================================
+
 
 async function renderMessages() {
   appEl.innerHTML = '';
@@ -1143,13 +1107,7 @@ async function renderMessages() {
   }
 }
 
-// ============================================================
-// CHECKOUT DETAILS (delivery + contact, before payment)
-// ============================================================
 
-// Remembers a buyer's last-used phone + address (not their name — that
-// always comes fresh from their account) so repeat purchases don't require
-// retyping delivery info every time.
 function getSavedShipping() {
   try {
     return JSON.parse(localStorage.getItem('tagg_shipping') || 'null');
@@ -1180,15 +1138,14 @@ async function renderCheckoutDetails({ type, listingId }) {
     return;
   }
 
-  // Resolve the item(s) being bought and their effective (possibly
-  // negotiated) price, the same way the cart and listing-detail pages do.
+ 
   async function withEffectivePrice(listing) {
     let effectivePrice = Number(listing.price);
     try {
       const negotiated = await apiFetch(`${API.listings}/${listing.id}/negotiated-price/${auth.id}`);
       effectivePrice = Number(negotiated.price);
     } catch {
-      // no negotiated price for this buyer — normal listing price stands
+     
     }
     return { ...listing, effectivePrice };
   }
@@ -1259,15 +1216,13 @@ async function renderCheckoutDetails({ type, listingId }) {
   const pickupSelect = appEl.querySelector('#pickupLocationSelect');
   const messageSellerLink = appEl.querySelector('#messageSellerLink');
 
-  // Pickup only makes sense for a single-seller purchase, and only if that
-  // seller listed at least one pickup spot when they posted the item.
+
   const pickupLocations = (type === 'listing')
     ? [items[0].pickup_location_1, items[0].pickup_location_2, items[0].pickup_location_3].filter(Boolean)
     : [];
 
   if (pickupLocations.length === 0) {
-    // No pickup spots to offer (or this is a multi-item cart checkout) —
-    // hide the choice entirely and keep the delivery-only flow.
+  
     appEl.querySelector('#deliveryMethodChoice').classList.add('hidden');
   } else {
     pickupSelect.innerHTML = pickupLocations
@@ -1346,9 +1301,7 @@ async function renderCheckoutDetails({ type, listingId }) {
   });
 }
 
-// ============================================================
-// CHECKOUT SUCCESS (Stripe redirects here after payment)
-// ============================================================
+
 
 async function renderCheckoutSuccess(query) {
   appEl.innerHTML = '';
@@ -1370,9 +1323,7 @@ async function renderCheckoutSuccess(query) {
   try {
     const { listings } = await apiFetch(`${API.listings}/orders/confirm?session_id=${encodeURIComponent(sessionId)}`);
 
-    // Whatever just got paid for is no longer "in the cart" — clear those
-    // ids out of local storage regardless of which flow (Buy now vs cart
-    // checkout) put them there.
+  
     const paidIds = listings.map(l => String(l.id));
     writeIdList(cartKey(), getCartIds().filter(id => !paidIds.includes(id)));
     writeIdList(wishlistKey(), getWishlistIds().filter(id => !paidIds.includes(id)));
@@ -1407,9 +1358,7 @@ async function renderCheckoutSuccess(query) {
   }
 }
 
-// ============================================================
-// ORDERS VIEW
-// ============================================================
+
 
 async function renderOrders() {
   appEl.innerHTML = '';
@@ -1430,7 +1379,7 @@ async function renderOrders() {
   const salesList = appEl.querySelector('#salesList');
   const salesEmpty = appEl.querySelector('#salesEmpty');
 
-  // Only show the half of Orders that matches the current mode
+
   if (mode === 'seller') {
     purchasesSubhead.classList.add('hidden');
     purchasesList.classList.add('hidden');
